@@ -1,23 +1,81 @@
 import json
 from datetime import datetime
-# Netmiko will be imported here later
+from netmiko import ConnectHandler
+from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
 
 def load_inventory(filename):
     """Reads the JSON inventory file and returns the data structure."""
     try:
         with open(filename, 'r') as file:
-            data = json.load(file)
-            return data
+            return json.load(file)
     except FileNotFoundError:
-        print(f"Error: Could not find {filename}. Ensure it is in the same directory.")
+        print(f"Error: Could not find {filename}.")
         return None
 
-if __name__ == "__main__":
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting EE8203 Automation Script...")
+def push_snmp(device, log_file):
+    """Connects to a single device and configures SNMP."""
     
-    # 1. Load the devices
+    # Map our JSON keys to the keys Netmiko expects
+    netmiko_device = {
+        "device_type": device["device_type"],
+        "host": device["ip"],
+        "username": device["username"],
+        "password": device["password"]
+    }
+    
+    # The Cisco commands we want to push
+    # Note: Assuming Zabbix will be placed on VLAN 40 (10.10.40.50)
+    snmp_commands = [
+        "snmp-server community UOR_SNMP RO",
+        "snmp-server host 10.10.40.50 version 2c UOR_SNMP",
+        "snmp-server enable traps"
+    ]
+    
+    print(f" -> Connecting to {device['hostname']} ({device['ip']})...")
+    
+    try:
+        # Establish SSH Connection
+        connection = ConnectHandler(**netmiko_device)
+        
+        # Push the commands
+        connection.send_config_set(snmp_commands)
+        
+        # Save the configuration (do write)
+        connection.save_config()
+        
+        # Disconnect cleanly
+        connection.disconnect()
+        
+        # Log success
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_file.write(f"[{timestamp}] SUCCESS: SNMP configured on {device['hostname']}\n")
+        print(f"    [OK] Configured and saved.")
+        
+    except (NetmikoTimeoutException, NetmikoAuthenticationException) as e:
+        # If the device is off or password is wrong, catch the error so the script doesn't crash!
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_file.write(f"[{timestamp}] FAILED: {device['hostname']} - Error: {str(e)}\n")
+        print(f"    [ERROR] Failed to connect. Logged to file.")
+
+
+if __name__ == "__main__":
+    start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[{start_time}] Starting EE8203 Automation Script...\n")
+    
     inventory = load_inventory("inventory.json")
     
     if inventory:
-        print(f"Successfully loaded {len(inventory['routers'])} routers and {len(inventory['switches'])} switches from inventory.")
-        # Future code: SSH loop will begin here
+        # Combine routers and switches into one big list
+        all_devices = inventory['routers'] + inventory['switches']
+        
+        # Create/Open our timestamped log file
+        log_filename = f"automation_log_{datetime.now().strftime('%Y%m%d')}.txt"
+        
+        with open(log_filename, 'a') as log_file:
+            log_file.write(f"\n--- Automation Run: {start_time} ---\n")
+            
+            # Loop through every device and run the SNMP function
+            for device in all_devices:
+                push_snmp(device, log_file)
+                
+        print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Script Complete. Check {log_filename} for details.")
