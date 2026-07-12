@@ -38,7 +38,10 @@ def push_snmp(device, log_file):
         "device_type": device["device_type"],
         "host": device["ip"],
         "username": device["username"],
-        "password": device["password"]
+        "password": device["password"],
+        "global_delay_factor": 2,  # Tells Python to double the wait time
+        "timeout": 60,             # Gives the router 60 seconds to finish the SSH math
+        "session_log": f"{device['hostname']}_debug.txt"  # Creates an x-ray text file
     }
     
     # The Cisco commands we want to push
