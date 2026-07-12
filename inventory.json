@@ -1,0 +1,76 @@
+{
+  "routers": [
+      {
+          "hostname": "R-CORE",
+          "ip": "10.255.255.2",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "R-EDGE",
+          "ip": "10.255.255.6",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      }
+  ],
+  "switches": [
+      {
+          "hostname": "SW-CORE",
+          "ip": "10.99.99.1",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "SW-D-DEIE",
+          "ip": "10.99.99.2",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "SW-D-DCEE",
+          "ip": "10.99.99.3",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "SW-D-DMME",
+          "ip": "10.99.99.4",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "SW-A-DEIE",
+          "ip": "10.99.99.10",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "SW-A-DCEE",
+          "ip": "10.99.99.20",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "SW-A-DMME",
+          "ip": "10.99.99.30",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      },
+      {
+          "hostname": "SW-A-DIS",
+          "ip": "10.99.99.40",
+          "device_type": "cisco_ios",
+          "username": "admin",
+          "password": "admin123"
+      }
+  ]
+}
