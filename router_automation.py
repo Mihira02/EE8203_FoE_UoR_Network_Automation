@@ -1,7 +1,15 @@
 import json
+import paramiko
 from datetime import datetime
 from netmiko import ConnectHandler
 from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
+
+# --- THE CIPHER FIX FOR CISCO 7200 ---
+# Force Python's SSH engine to accept legacy cryptography
+paramiko.Transport._preferred_ciphers = (
+    'aes128-cbc', '3des-cbc', 'aes192-cbc', 'aes256-cbc'
+) + paramiko.Transport._preferred_ciphers
+# -------------------------------------
 
 def load_inventory(filename):
     """Reads the JSON inventory file and returns the data structure."""
