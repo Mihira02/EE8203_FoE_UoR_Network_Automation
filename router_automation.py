@@ -61,8 +61,10 @@ def push_snmp(device, log_file):
         # Push the commands
         connection.send_config_set(snmp_commands)
         
-        # Save the configuration (do write)
-        connection.save_config()
+        # Save the configuration and handle the GNS3 NVRAM warning
+        output = connection.send_command_timing("write memory")
+        if "confirm" in output.lower():
+            connection.send_command_timing("\n")
         
         # Disconnect cleanly
         connection.disconnect()
