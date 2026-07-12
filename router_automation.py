@@ -4,12 +4,22 @@ from datetime import datetime
 from netmiko import ConnectHandler
 from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
 
-# --- THE CIPHER FIX FOR CISCO 7200 ---
-# Force Python's SSH engine to accept legacy cryptography
+# --- THE FULL LEGACY CRYPTO FIX FOR CISCO 7200 ---
+# 1. Force legacy Ciphers
 paramiko.Transport._preferred_ciphers = (
     'aes128-cbc', '3des-cbc', 'aes192-cbc', 'aes256-cbc'
 ) + paramiko.Transport._preferred_ciphers
-# -------------------------------------
+
+# 2. Force legacy Key Exchanges (KEX)
+paramiko.Transport._preferred_kex = (
+    'diffie-hellman-group1-sha1', 'diffie-hellman-group14-sha1', 'diffie-hellman-group-exchange-sha1'
+) + paramiko.Transport._preferred_kex
+
+# 3. Force legacy Public Keys
+paramiko.Transport._preferred_pubkeys = (
+    'ssh-rsa', 'ssh-dss'
+) + paramiko.Transport._preferred_pubkeys
+# -------------------------------------------------
 
 def load_inventory(filename):
     """Reads the JSON inventory file and returns the data structure."""
