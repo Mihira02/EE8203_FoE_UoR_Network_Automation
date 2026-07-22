@@ -1,0 +1,13 @@
+---
+# Configure Rapid PVST+ and Root Bridge Priorities
+- name: Enable Rapid PVST+ globally
+  cisco.ios.ios_config:
+    lines:
+      - spanning-tree mode pvst
+      - spanning-tree extend system-id
+
+- name: Set STP Priority for Distribution Switches
+  cisco.ios.ios_config:
+    lines:
+      - "spanning-tree vlan 10,99,100 priority {{ stp_priority }}"
+  when: stp_priority is defined

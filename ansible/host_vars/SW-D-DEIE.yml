@@ -1,0 +1,3 @@
+---
+# Primary Root Bridge for all VLANs
+stp_priority: 4096

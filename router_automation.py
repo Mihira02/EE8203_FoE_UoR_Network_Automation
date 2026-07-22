@@ -21,6 +21,7 @@ paramiko.Transport._preferred_pubkeys = (
 ) + paramiko.Transport._preferred_pubkeys
 # -------------------------------------------------
 
+
 def load_inventory(filename):
     """Reads the JSON inventory file and returns the data structure."""
     try:
