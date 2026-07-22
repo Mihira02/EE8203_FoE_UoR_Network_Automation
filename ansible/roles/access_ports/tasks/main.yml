@@ -1,0 +1,13 @@
+---
+# Configure access ports for user devices
+- name: Assign access ports to correct VLANs (Access Switches Only)
+  cisco.ios.ios_l2_interfaces:
+    config:
+      - name: GigabitEthernet0/1
+        access:
+          vlan: 10
+      - name: GigabitEthernet0/2
+        access:
+          vlan: 10
+    state: merged
+  when: "'access_switches' in group_names"

@@ -1,0 +1,9 @@
+---
+# Create VLANs on all switches
+- name: Ensure global VLANs exist in the database
+  cisco.ios.ios_vlans:
+    config:
+      - vlan_id: "{{ item.id }}"
+        name: "{{ item.name }}"
+    state: merged
+  loop: "{{ vlan_list }}"

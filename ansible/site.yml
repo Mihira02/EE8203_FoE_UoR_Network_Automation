@@ -1,0 +1,11 @@
+---
+# Master Orchestrator Playbook
+- name: Configure Switching Fabric (Layer 2 & Resilience)
+  hosts: switches
+  gather_facts: false
+  
+  roles:
+    - vlans
+    - trunking
+    - stp
+    - access_ports
