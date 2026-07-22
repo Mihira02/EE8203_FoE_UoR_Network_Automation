@@ -1,6 +1,6 @@
 ---
 # Configure access ports for user devices
-- name: Assign access ports to correct VLANs (Access Switches Only)
+- name: Assign access ports to correct VLANs (Standard Access Switches)
   cisco.ios.ios_l2_interfaces:
     config:
       - name: GigabitEthernet0/1
@@ -10,4 +10,19 @@
         access:
           vlan: 10
     state: merged
-  when: "'access_switches' in group_names"
+  when: "'access_switches' in group_names and inventory_hostname != 'SW-A-DIS'"
+
+- name: Assign access ports for DIS Server Farm (Protect VM-AUTO)
+  cisco.ios.ios_l2_interfaces:
+    config:
+      - name: GigabitEthernet0/1
+        access:
+          vlan: 99
+      - name: GigabitEthernet0/2
+        access:
+          vlan: 99
+      - name: GigabitEthernet0/3
+        access:
+          vlan: 99
+    state: merged
+  when: "inventory_hostname == 'SW-A-DIS'"
