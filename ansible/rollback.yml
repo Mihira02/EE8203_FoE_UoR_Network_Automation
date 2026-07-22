@@ -1,0 +1,34 @@
+---
+- name: Rollback Layer 2 Fabric to Clean Baseline
+  hosts: switches
+  gather_facts: no
+  tasks:
+    - name: Step 1 - Remove User Data VLANs (Preserving MGMT)
+      cisco.ios.ios_vlans:
+        config:
+          - vlan_id: 10
+        state: deleted
+
+    - name: Step 2 - Remove STP Priorities
+      cisco.ios.ios_config:
+        lines:
+          - no spanning-tree vlan 10,99,100 priority 4096
+          - no spanning-tree vlan 10,99,100 priority 8192
+      ignore_errors: yes
+
+    - name: Step 3 - Disable Rapid PVST+ Globally
+      cisco.ios.ios_config:
+        lines:
+          - no spanning-tree mode rapid-pvst
+
+    - name: Step 4 - Reset Standard Access Ports to Default VLAN (VLAN 1)
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: GigabitEthernet0/1
+            access:
+              vlan: 1
+          - name: GigabitEthernet0/2
+            access:
+              vlan: 1
+        state: overridden
+      when: "'access_switches' in group_names and inventory_hostname != 'SW-A-DIS'"
