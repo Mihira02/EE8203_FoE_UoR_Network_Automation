@@ -5,6 +5,7 @@ from netmiko import ConnectHandler
 from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
 
 # --- THE FULL LEGACY CRYPTO FIX FOR CISCO 7200 ---
+# Required to negotiate SSH encryption algorithms with older Cisco IOS images in GNS3
 paramiko.Transport._preferred_ciphers = (
     'aes128-cbc', '3des-cbc', 'aes192-cbc', 'aes256-cbc'
 ) + paramiko.Transport._preferred_ciphers
@@ -19,6 +20,7 @@ paramiko.Transport._preferred_pubkeys = (
 # -------------------------------------------------
 
 def load_inventory(filename):
+    """Loads device details from the inventory JSON file."""
     try:
         with open(filename, 'r') as file:
             return json.load(file)
@@ -29,13 +31,14 @@ def load_inventory(filename):
 def push_l3_features(device, log_file):
     """Connects to a router and pushes Layer 3 features with idempotency checks."""
     
+    # Connection parameters optimized for GNS3 virtual routers
     netmiko_device = {
         "device_type": device["device_type"],
         "host": device["ip"],
         "username": device["username"],
         "password": device["password"],
-        "global_delay_factor": 2,
-        "timeout": 60
+        "global_delay_factor": 2,  # Increases sleep interval between sent commands
+        "timeout": 60              # Extended SSH timeout window
     }
     
     print(f" -> Connecting to {device['hostname']} ({device['ip']})...")
@@ -147,14 +150,11 @@ if __name__ == "__main__":
     inventory = load_inventory("inventory.json")
     
     if inventory:
-        # Notice we are ONLY loading the routers here, completely ignoring the switches!
         target_routers = inventory['routers']
-        
         log_filename = f"l3_automation_log_{datetime.now().strftime('%Y%m%d')}.txt"
         
         with open(log_filename, 'a') as log_file:
             log_file.write(f"\n--- L3 Automation Run: {start_time} ---\n")
-            
             for router in target_routers:
                 push_l3_features(router, log_file)
                 
