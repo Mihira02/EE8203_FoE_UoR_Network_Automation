@@ -1,0 +1,20 @@
+enable
+configure terminal
+interface GigabitEthernet 0/1
+description TRUNK-TO-SW-D-DEIE
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shutdown
+exit
+enable
+configure terminal
+vlan 10
+ name VLAN_DEIE
+configure terminal
+interface range GigabitEthernet 0/0 - 1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 30
+ no shutdown
+ exit
+do write
