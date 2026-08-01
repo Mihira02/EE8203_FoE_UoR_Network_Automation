@@ -1,7 +1,6 @@
 ---
-stp_priority: 8192
-dept_vlan_id: 20
+dept_vlan_id: 40
 vlan_list:
-  - { id: 20, name: "VLAN_DCEE" }
+  - { id: 40, name: "VLAN_DIS" }
   - { id: 99, name: "MGMT" }
   - { id: 100, name: "NATIVE" }

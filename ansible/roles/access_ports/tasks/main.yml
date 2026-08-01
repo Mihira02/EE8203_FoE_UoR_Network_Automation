@@ -1,18 +1,17 @@
 ---
-# Configure access ports for user devices
 - name: Assign access ports to correct VLANs (Standard Access Switches)
   cisco.ios.ios_l2_interfaces:
     config:
       - name: GigabitEthernet0/1
         access:
-          vlan: 10
+          vlan: "{{ dept_vlan_id }}"
       - name: GigabitEthernet0/2
         access:
-          vlan: 10
+          vlan: "{{ dept_vlan_id }}"
     state: merged
   when: "'access_switches' in group_names and inventory_hostname != 'SW-A-DIS'"
 
-- name: Assign access ports for DIS Server Farm (Protect VM-AUTO)
+- name: Assign access ports for DIS Server Farm (VM-AUTO stays on MGMT VLAN)
   cisco.ios.ios_l2_interfaces:
     config:
       - name: GigabitEthernet0/1
@@ -20,9 +19,9 @@
           vlan: 99
       - name: GigabitEthernet0/2
         access:
-          vlan: 99
+          vlan: "{{ dept_vlan_id }}"
       - name: GigabitEthernet0/3
         access:
-          vlan: 99
+          vlan: "{{ dept_vlan_id }}"
     state: merged
   when: "inventory_hostname == 'SW-A-DIS'"

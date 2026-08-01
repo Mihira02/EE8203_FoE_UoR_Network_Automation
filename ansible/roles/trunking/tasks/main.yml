@@ -1,18 +1,17 @@
 ---
-# Configure Trunk Ports across the fabric
 - name: Configure Distribution Switch Trunks
   cisco.ios.ios_l2_interfaces:
     config:
       - name: GigabitEthernet0/0
         mode: trunk
         trunk:
-          allowed_vlans: 10,99-100
+          allowed_vlans: "{{ dept_vlan_id }},99-100"
           encapsulation: dot1q
           native_vlan: 100
       - name: GigabitEthernet0/1
         mode: trunk
         trunk:
-          allowed_vlans: 10,99-100
+          allowed_vlans: "{{ dept_vlan_id }},99-100"
           encapsulation: dot1q
           native_vlan: 100
     state: merged
@@ -24,7 +23,7 @@
       - name: GigabitEthernet0/0
         mode: trunk
         trunk:
-          allowed_vlans: 10,99-100
+          allowed_vlans: "{{ dept_vlan_id }},99-100"
           encapsulation: dot1q
           native_vlan: 100
     state: merged

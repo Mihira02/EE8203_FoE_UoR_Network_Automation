@@ -1,5 +1,4 @@
 ---
-stp_priority: 8192
 dept_vlan_id: 20
 vlan_list:
   - { id: 20, name: "VLAN_DCEE" }

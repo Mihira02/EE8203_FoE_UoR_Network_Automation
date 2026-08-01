@@ -1,6 +1,3 @@
 ---
-# Global variables for all switches
-vlan_list:
-  - { id: 10, name: "VLAN_DEIE" }
-  - { id: 99, name: "MGMT" }
-  - { id: 100, name: "NATIVE" }
+# Department VLAN assignments are defined per-switch in host_vars/
+# to avoid applying one department's VLAN to another switch.
