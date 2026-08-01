@@ -1,20 +1,38 @@
 enable
 configure terminal
-interface GigabitEthernet 0/1
-description TRUNK-TO-SW-D-DEIE
-switchport trunk encapsulation dot1q
-switchport mode trunk
-no shutdown
-exit
-enable
-configure terminal
+ hostname SW-D-DEIE
+
 vlan 10
  name VLAN_DEIE
-configure terminal
-interface range GigabitEthernet 0/0 - 1
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-CORE ##
  switchport trunk encapsulation dot1q
  switchport mode trunk
- switchport trunk native vlan 10
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,99,100
  no shutdown
  exit
-do write
+
+interface GigabitEthernet0/1
+ description ## TO SW-A-DEIE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,99,100
+ no shutdown
+ exit
+
+end
+write memory
