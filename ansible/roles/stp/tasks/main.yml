@@ -8,5 +8,5 @@
 - name: Set STP Priority for Distribution Switches
   cisco.ios.ios_config:
     lines:
-      - "spanning-tree vlan {{ dept_vlan_id }},99,100 priority {{ stp_priority }}"
+      - "spanning-tree vlan {{ dept_vlan_id }},99-100 priority {{ stp_priority }}"
   when: stp_priority is defined
