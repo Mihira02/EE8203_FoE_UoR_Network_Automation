@@ -1,27 +1,27 @@
 ---
-- name: Rollback Layer 2 Fabric to Clean Baseline
+- name: Rollback Layer 2 Fabric to Clean Baseline (Preserving Management Access)
   hosts: switches
   gather_facts: no
   tasks:
-    - name: Step 1 - Remove User Data VLANs (Preserving MGMT)
+    - name: Step 1 - Remove department VLAN (Preserving MGMT and NATIVE)
       cisco.ios.ios_vlans:
         config:
-          - vlan_id: 10
+          - vlan_id: "{{ dept_vlan_id }}"
         state: deleted
 
-    - name: Step 2 - Remove STP Priorities
+    - name: Step 2 - Remove STP priority for this switch's VLAN
       cisco.ios.ios_config:
         lines:
-          - no spanning-tree vlan 10,99,100 priority 4096
-          - no spanning-tree vlan 10,99,100 priority 8192
+          - "no spanning-tree vlan {{ dept_vlan_id }},99-100 priority {{ stp_priority }}"
+      when: stp_priority is defined
       ignore_errors: yes
 
-    - name: Step 3 - Disable Rapid PVST+ Globally
+    - name: Step 3 - Disable Rapid PVST+ globally
       cisco.ios.ios_config:
         lines:
           - no spanning-tree mode rapid-pvst
 
-    - name: Step 4 - Reset Standard Access Ports to Default VLAN (VLAN 1)
+    - name: Step 4 - Reset access ports to default VLAN 1 (Standard Access Switches)
       cisco.ios.ios_l2_interfaces:
         config:
           - name: GigabitEthernet0/1
@@ -32,3 +32,15 @@
               vlan: 1
         state: overridden
       when: "'access_switches' in group_names and inventory_hostname != 'SW-A-DIS'"
+
+    - name: Step 5 - Reset SW-A-DIS data ports to default (preserve VM-AUTO on Gi0/1)
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: GigabitEthernet0/2
+            access:
+              vlan: 1
+          - name: GigabitEthernet0/3
+            access:
+              vlan: 1
+        state: overridden
+      when: "inventory_hostname == 'SW-A-DIS'"
