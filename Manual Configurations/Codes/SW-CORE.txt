@@ -1,13 +1,11 @@
 enable
 configure terminal
-interface GigabitEthernet 0/1
-description TRUNK-TO-SW-D-DEIE
-switchport trunk encapsulation dot1q
-switchport mode trunk
-no shutdown
-exit
-enable
-configure terminal
+ hostname SW-CORE
+
+no ip domain-lookup
+ip routing
+
+! --- Create VLAN Database ---
 vlan 10
  name VLAN_DEIE
 vlan 20
@@ -20,11 +18,134 @@ vlan 99
  name MGMT
 vlan 100
  name NATIVE
-configure terminal
-interface range GigabitEthernet 0/0 - 1
+exit
+
+! --- Layer 3 SVIs (Default Gateways) ---
+interface Vlan10
+ ip address 10.10.10.1 255.255.255.0
+ no shutdown
+ exit
+
+interface Vlan20
+ ip address 10.10.20.1 255.255.255.0
+ no shutdown
+ exit
+
+interface Vlan30
+ ip address 10.10.30.1 255.255.255.0
+ no shutdown
+ exit
+
+interface Vlan40
+ ip address 10.10.40.1 255.255.255.0
+ no shutdown
+ exit
+
+interface Vlan99
+ ip address 10.99.99.1 255.255.255.0
+ no shutdown
+ exit
+
+! --- Downlink Trunks ---
+interface GigabitEthernet0/1
+ description ## TO SW-D-DEIE ##
  switchport trunk encapsulation dot1q
  switchport mode trunk
  switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,99,100
  no shutdown
  exit
-do write
+
+interface GigabitEthernet0/2
+ description ## TO SW-D-DCEE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 20,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet0/3
+ description ## TO SW-D-DMME ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 30,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet1/0
+ description ## TO SW-A-DIS ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 40,99,100
+ no shutdown
+ exit
+
+! --- Layer 3 Uplink to R-CORE ---
+interface GigabitEthernet0/0
+ description ## TO R-CORE ##
+ no switchport
+ ip address 10.255.255.1 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+ no shutdown
+ exit
+
+! --- OSPF Dynamic Routing ---
+router ospf 1
+ router-id 1.1.1.1
+ network 10.10.10.0 0.0.0.255 area 0
+ network 10.10.20.0 0.0.0.255 area 0
+ network 10.10.30.0 0.0.0.255 area 0
+ network 10.10.40.0 0.0.0.255 area 0
+ network 10.99.99.0 0.0.0.255 area 0
+ network 10.255.255.0 0.0.0.3 area 0
+ exit
+
+end
+write memory
+
+configure terminal
+
+! --- DEIE Security Policy ---
+ip access-list extended ACL_DEIE_IN
+ permit ip 10.10.10.0 0.0.0.255 10.10.40.0 0.0.0.255
+ permit ip 10.10.10.0 0.0.0.255 any
+ deny ip any any
+ exit
+
+! --- DCEE Security Policy ---
+ip access-list extended ACL_DCEE_IN
+ deny ip 10.10.20.0 0.0.0.255 10.10.10.0 0.0.0.255
+ permit tcp 10.10.20.0 0.0.0.255 10.10.40.0 0.0.0.255 eq 80
+ permit tcp 10.10.20.0 0.0.0.255 10.10.40.0 0.0.0.255 eq 443
+ deny ip 10.10.20.0 0.0.0.255 10.10.40.0 0.0.0.255
+ permit ip 10.10.20.0 0.0.0.255 any
+ deny ip any any
+ exit
+
+! --- DMME Security Policy ---
+ip access-list extended ACL_DMME_IN
+ deny ip 10.10.30.0 0.0.0.255 10.10.20.0 0.0.0.255
+ deny ip 10.10.30.0 0.0.0.255 10.10.40.0 0.0.0.255
+ permit ip 10.10.30.0 0.0.0.255 any
+ deny ip any any
+ exit
+
+! --- Attach ACLs to Core SVIs ---
+interface Vlan10
+ ip access-group ACL_DEIE_IN in
+ exit
+
+interface Vlan20
+ ip access-group ACL_DCEE_IN in
+ exit
+
+interface Vlan30
+ ip access-group ACL_DMME_IN in
+ exit
+
+end
+write memory
