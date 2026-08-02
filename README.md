@@ -59,15 +59,18 @@ EE8203_FoE_UoR_Network_Automation/
 │       │   └── tasks/
 │       └── vlans/                  # VLAN Database creation tasks
 │           └── tasks/
-├── images/                         # Screenshot evidence for testing & report
-│   ├── pc1_deie_pings.png
-│   ├── pc3_dcee_pings.png
-│   ├── pc5_dmme_pings.png
-│   ├── pc7_dis_pings.png
-│   └── topology_diagram.png
-└── Manual Configurations/          # Baseline Network Code & Logs
+├── images/                         # Network topology diagrams & schematics
+└── Manual Configurations/          # Baseline Network Code & Validation
     ├── Codes/                      # CLI Manual Command Snippets
     │   ├── Access Layer/           # Access switch configurations
     │   ├── Distribution Layer/     # Distribution switch configurations
     │   └── Routing/                # SW-CORE, R-CORE, & R-EDGE configurations
-    └── Results/                    # Raw CLI outputs, ping logs & verification
+    └── Results/                    # Verification evidence screenshots
+        ├── PC1 ping results.png
+        ├── PC2 ping results.png
+        ├── PC3 ping results.png
+        ├── PC4 ping results.png
+        ├── PC5 ping results.png
+        ├── PC6 ping results.png
+        ├── PC7 ping results.png
+        └── PC8 ping results.png
