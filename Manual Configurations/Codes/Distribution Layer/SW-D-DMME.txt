@@ -1,6 +1,6 @@
 enable
 configure terminal
- hostname SW-D-DMME
+hostname SW-D-DMME
 
 vlan 10
  name VLAN_DEIE

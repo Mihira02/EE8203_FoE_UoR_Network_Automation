@@ -1,6 +1,6 @@
 enable
 configure terminal
- hostname SW-A-DEIE
+hostname SW-A-DEIE
 
 vlan 10
  name VLAN_DEIE
