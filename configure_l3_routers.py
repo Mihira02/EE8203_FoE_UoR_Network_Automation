@@ -52,6 +52,7 @@ def push_l3_features(device, log_file):
                 "interface GigabitEthernet1/0",
                 "description LINK-TO-NAT-INTERNET",
                 "ip address dhcp",
+                "no ip dhcp client request router",  # FIXED: Prevents AD 254 ghost route
                 "ip nat outside",
                 "no shutdown",
                 "interface GigabitEthernet2/0",
@@ -83,6 +84,8 @@ def push_l3_features(device, log_file):
                 commands.extend([
                     "ip access-list extended ACL_MGMT_SSH",
                     "permit tcp 10.99.99.0 0.0.0.255 any eq 22",
+                    "permit udp host 10.99.99.102 any eq snmp", # FIXED: Zabbix SNMP
+                    "permit icmp host 10.99.99.102 any",        # FIXED: Zabbix ICMP Ping
                     "deny ip any any",
                     "line vty 0 4",
                     "access-class ACL_MGMT_SSH in"
@@ -117,6 +120,8 @@ def push_l3_features(device, log_file):
                 commands.extend([
                     "ip access-list extended ACL_MGMT_SSH",
                     "permit tcp 10.99.99.0 0.0.0.255 any eq 22",
+                    "permit udp host 10.99.99.102 any eq snmp", # FIXED: Zabbix SNMP
+                    "permit icmp host 10.99.99.102 any",        # FIXED: Zabbix ICMP Ping
                     "deny ip any any",
                     "line vty 0 4",
                     "access-class ACL_MGMT_SSH in"
