@@ -100,10 +100,11 @@ def push_snmp(device, log_file):
         "session_log": f"{hostname}_debug.txt"
     }
     
-    # SNMP payload targeting Zabbix Monitoring Server (10.10.40.50 on VLAN 40)
+    # SNMP payload targeting Zabbix Monitoring Server (10.99.99.102 on VLAN 99)
     snmp_commands = [
+        "no snmp-server host 10.10.40.50 version 2c UOR_SNMP",
         "snmp-server community UOR_SNMP RO",
-        "snmp-server host 10.10.40.50 version 2c UOR_SNMP",
+        "snmp-server host 10.99.99.102 version 2c UOR_SNMP",
         "snmp-server enable traps"
     ]
     
