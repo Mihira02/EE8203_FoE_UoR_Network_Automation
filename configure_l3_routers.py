@@ -64,7 +64,7 @@ def push_l3_features(device, log_file):
                 "network 10.255.255.4 0.0.0.3 area 0",
                 "default-information originate always",
                 "ip nat inside source list NAT_ALLOWED interface GigabitEthernet1/0 overload",
-                "ip route 0.0.0.0 0.0.0.0 192.168.122.1 254"
+                "ip route 0.0.0.0 0.0.0.0 192.168.122.1"
             ]
             
             # Idempotency Check: Read existing ACLs
