@@ -1,0 +1,238 @@
+Building configuration...
+
+Current configuration : 6982 bytes
+!
+! Last configuration change at 15:17:28 UTC Wed Aug 5 2026
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname SW-A-DEIE
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+username admin privilege 15 secret 5 $1$z04A$qcN0AcKLzc7t.4dmvBYvZ.
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!
+ip domain-name uor.local
+ip cef
+no ipv6 cef
+!
+!
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ switchport trunk allowed vlan 10,99,100
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 100
+ switchport mode trunk
+ negotiation auto
+!
+interface GigabitEthernet0/1
+ switchport access vlan 10
+ switchport mode access
+ negotiation auto
+!
+interface GigabitEthernet0/2
+ switchport access vlan 10
+ switchport mode access
+ negotiation auto
+!
+interface GigabitEthernet0/3
+ negotiation auto
+!
+interface GigabitEthernet1/0
+ negotiation auto
+!
+interface GigabitEthernet1/1
+ negotiation auto
+!
+interface GigabitEthernet1/2
+ negotiation auto
+!
+interface GigabitEthernet1/3
+ negotiation auto
+!
+interface GigabitEthernet2/0
+ negotiation auto
+!
+interface GigabitEthernet2/1
+ negotiation auto
+!
+interface GigabitEthernet2/2
+ negotiation auto
+!
+interface GigabitEthernet2/3
+ negotiation auto
+!
+interface GigabitEthernet3/0
+ negotiation auto
+!
+interface GigabitEthernet3/1
+ negotiation auto
+!
+interface GigabitEthernet3/2
+ negotiation auto
+!
+interface GigabitEthernet3/3
+ negotiation auto
+!
+interface Vlan99
+ ip address 10.99.99.10 255.255.255.0
+!
+ip default-gateway 10.99.99.1
+ip forward-protocol nd
+!
+ip http server
+ip http secure-server
+!
+ip ssh version 2
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+!
+!
+!
+!
+snmp-server community UOR_SNMP RO
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps flowmon
+snmp-server enable traps tty
+snmp-server enable traps eigrp
+snmp-server enable traps casa
+snmp-server enable traps ospf state-change
+snmp-server enable traps ospf errors
+snmp-server enable traps ospf retransmit
+snmp-server enable traps ospf lsa
+snmp-server enable traps ospf cisco-specific state-change nssa-trans-change
+snmp-server enable traps ospf cisco-specific state-change shamlink interface
+snmp-server enable traps ospf cisco-specific state-change shamlink neighbor
+snmp-server enable traps ospf cisco-specific errors
+snmp-server enable traps ospf cisco-specific retransmit
+snmp-server enable traps ospf cisco-specific lsa
+snmp-server enable traps ethernet cfm cc mep-up mep-down cross-connect loop config
+snmp-server enable traps ethernet cfm crosscheck mep-missing mep-unknown service-up
+snmp-server enable traps auth-framework sec-violation
+snmp-server enable traps energywise
+snmp-server enable traps pw vc
+snmp-server enable traps l2tun session
+snmp-server enable traps l2tun pseudowire status
+snmp-server enable traps ether-oam
+snmp-server enable traps lisp
+snmp-server enable traps mpls rfc ldp
+snmp-server enable traps mpls ldp
+snmp-server enable traps mpls rfc traffic-eng
+snmp-server enable traps mpls traffic-eng
+snmp-server enable traps ethernet evc status create delete
+snmp-server enable traps bridge newroot topologychange
+snmp-server enable traps stpx inconsistency root-inconsistency loop-inconsistency
+snmp-server enable traps vtp
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+snmp-server enable traps ike policy add
+snmp-server enable traps ike policy delete
+snmp-server enable traps ike tunnel start
+snmp-server enable traps ike tunnel stop
+snmp-server enable traps ipsec cryptomap add
+snmp-server enable traps ipsec cryptomap delete
+snmp-server enable traps ipsec cryptomap attach
+snmp-server enable traps ipsec cryptomap detach
+snmp-server enable traps ipsec tunnel start
+snmp-server enable traps ipsec tunnel stop
+snmp-server enable traps ipsec too-many-sas
+snmp-server enable traps bfd
+snmp-server enable traps bgp cbgp2
+snmp-server enable traps cef resource-failure peer-state-change peer-fib-state-change inconsistency
+snmp-server enable traps dlsw
+snmp-server enable traps frame-relay
+snmp-server enable traps frame-relay subif
+snmp-server enable traps hsrp
+snmp-server enable traps ipmulticast
+snmp-server enable traps isis
+snmp-server enable traps msdp
+snmp-server enable traps mvpn
+snmp-server enable traps pim neighbor-change rp-mapping-change invalid-pim-message
+snmp-server enable traps rsvp
+snmp-server enable traps ipsla
+snmp-server enable traps slb real virtual csrp
+snmp-server enable traps syslog
+snmp-server enable traps event-manager
+snmp-server enable traps pki
+snmp-server enable traps ospfv3 state-change
+snmp-server enable traps ospfv3 errors
+snmp-server enable traps ethernet cfm alarm
+snmp-server enable traps mpls vpn
+snmp-server enable traps vrfmib vrf-up vrf-down vnet-trunk-up vnet-trunk-down
+snmp-server host 10.99.99.102 version 2c UOR_SNMP 
+!
+control-plane
+!
+banner exec ^C
+IOSv - Cisco Systems Confidential -
+
+Supplemental End User License Restrictions
+
+This IOSv software is provided AS-IS without warranty of any kind. Under no circumstances may this software be used separate from the Cisco Modeling Labs Software that this software was provided with, or deployed or used as part of a production environment.
+
+By using the software, you agree to abide by the terms and conditions of the Cisco End User License Agreement at http://www.cisco.com/go/eula. Unauthorized use or distribution of this software is expressly prohibited.
+^C
+banner incoming ^C
+IOSv - Cisco Systems Confidential -
+
+Supplemental End User License Restrictions
+
+This IOSv software is provided AS-IS without warranty of any kind. Under no circumstances may this software be used separate from the Cisco Modeling Labs Software that this software was provided with, or deployed or used as part of a production environment.
+
+By using the software, you agree to abide by the terms and conditions of the Cisco End User License Agreement at http://www.cisco.com/go/eula. Unauthorized use or distribution of this software is expressly prohibited.
+^C
+banner login ^C
+IOSv - Cisco Systems Confidential -
+
+Supplemental End User License Restrictions
+
+This IOSv software is provided AS-IS without warranty of any kind. Under no circumstances may this software be used separate from the Cisco Modeling Labs Software that this software was provided with, or deployed or used as part of a production environment.
+
+By using the software, you agree to abide by the terms and conditions of the Cisco End User License Agreement at http://www.cisco.com/go/eula. Unauthorized use or distribution of this software is expressly prohibited.
+^C
+!
+line con 0
+line aux 0
+line vty 0 4
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+!
+!
+end
