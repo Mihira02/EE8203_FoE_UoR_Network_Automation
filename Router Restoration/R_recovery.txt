@@ -1,0 +1,14 @@
+enable
+configure terminal
+hostname <Router that got wiped>
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+ exit
+interface <Management-Interface>
+ ip address <The IP from your inventory.json> 255.255.255.0
+ no shutdown
