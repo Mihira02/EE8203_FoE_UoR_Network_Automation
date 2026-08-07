@@ -3,42 +3,67 @@ configure terminal
 hostname R-EDGE
 
 no ip domain-lookup
+ip domain-name uor.local
 
-! --- Transit Link to R-CORE ---
+username admin privilege 15 secret cisco123
+
+! --- SSH & Management Security ---
+crypto key generate rsa modulus 2048
+ip ssh version 2
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ permit udp host 10.99.99.102 any eq snmp
+ permit icmp host 10.99.99.102 any
+ deny   ip any any
+ exit
+
+line vty 0 4
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- Interfaces ---
 interface GigabitEthernet2/0
  description LINK-TO-R-CORE
  ip address 10.255.255.6 255.255.255.252
  ip ospf network point-to-point
  ip ospf 1 area 0
  ip nat inside
+ ip virtual-reassembly in
  no shutdown
  exit
 
-! --- Internet / WAN Interface ---
 interface GigabitEthernet1/0
- description LINK-TO-INTERNET-CLOUD
- ip address 192.168.13.100 255.255.255.0
+ description LINK-TO-GNS3-VM-NAT
+ ip dhcp client request router
+ ip address dhcp
  ip nat outside
+ ip virtual-reassembly in
  no shutdown
  exit
 
-! --- Static Gateway of Last Resort ---
-ip route 0.0.0.0 0.0.0.0 192.168.13.2
-
-! --- OSPF Default Route Injection ---
+! --- Routing & NAT ---
 router ospf 1
  router-id 3.3.3.3
  network 10.255.255.4 0.0.0.3 area 0
- default-information originate
+ default-information originate always
  exit
 
-! --- NAT Egress Control (Permit DEIE & DCEE Only) ---
 ip access-list standard NAT_ALLOWED
  permit 10.10.10.0 0.0.0.255
  permit 10.10.20.0 0.0.0.255
  exit
 
 ip nat inside source list NAT_ALLOWED interface GigabitEthernet1/0 overload
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP 
 
 end
 write memory
