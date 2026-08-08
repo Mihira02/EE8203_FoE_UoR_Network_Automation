@@ -4,14 +4,11 @@ hostname R-EDGE
 
 no ip domain-lookup
 ip domain-name uor.local
-
 username admin privilege 15 secret cisco123
 
 ! --- SSH & Management Security ---
 crypto key generate rsa modulus 2048
 ip ssh version 2
-ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
-ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
 
 ip access-list extended ACL_MGMT_SSH
  permit tcp 10.99.99.0 0.0.0.255 any eq 22
@@ -46,10 +43,11 @@ interface GigabitEthernet1/0
  no shutdown
  exit
 
-! --- Routing & NAT ---
+! --- Routing & NAT Control ---
 router ospf 1
  router-id 3.3.3.3
  network 10.255.255.4 0.0.0.3 area 0
+ network 10.99.99.51 0.0.0.0 area 0
  default-information originate always
  exit
 
@@ -60,10 +58,10 @@ ip access-list standard NAT_ALLOWED
 
 ip nat inside source list NAT_ALLOWED interface GigabitEthernet1/0 overload
 
-! --- SNMP ---
+! --- SNMP Monitoring ---
 snmp-server community UOR_SNMP RO
 snmp-server enable traps
-snmp-server host 10.99.99.102 version 2c UOR_SNMP 
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
 
 end
 write memory

@@ -1,0 +1,846 @@
+Core Layer Switching Configurations
+==========================
+SW-CORE (Core L3 Switch)
+==========================
+enable
+configure terminal
+hostname SW-CORE
+
+no ip domain-lookup
+ip routing
+
+! --- Management & SSH Security ---
+username admin privilege 15 secret admin123
+ip domain-name uor.local
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- Force Core to act as STP Root to prevent GNS3 glitches ---
+spanning-tree mode pvst
+spanning-tree extend system-id
+spanning-tree vlan 10,20,30,40,99,100 root primary
+
+! --- VLAN Database ---
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+! --- Access Control Security Policies ---
+ip access-list extended ACL_DEIE_IN
+ deny ip 10.10.10.0 0.0.0.255 10.99.99.0 0.0.0.255
+ permit ip 10.10.10.0 0.0.0.255 any
+ exit
+
+ip access-list extended ACL_DCEE_IN
+ permit icmp 10.10.20.0 0.0.0.255 10.10.10.0 0.0.0.255 echo-reply
+ deny ip 10.10.20.0 0.0.0.255 10.10.10.0 0.0.0.255
+ permit tcp 10.10.20.0 0.0.0.255 10.10.40.0 0.0.0.255 eq 80
+ permit tcp 10.10.20.0 0.0.0.255 10.10.40.0 0.0.0.255 eq 443
+ deny ip 10.10.20.0 0.0.0.255 10.10.40.0 0.0.0.255
+ deny ip 10.10.20.0 0.0.0.255 10.99.99.0 0.0.0.255
+ permit ip 10.10.20.0 0.0.0.255 any
+ exit
+
+ip access-list extended ACL_DMME_IN
+ deny ip 10.10.30.0 0.0.0.255 10.10.20.0 0.0.0.255
+ deny ip 10.10.30.0 0.0.0.255 10.10.40.0 0.0.0.255
+ deny ip 10.10.30.0 0.0.0.255 10.10.10.0 0.0.0.255
+ ! Implicit deny handles the rest to prevent self-blocking
+ exit
+
+ip access-list extended ACL_MGMT_IN
+ permit icmp host 10.99.99.102 any
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any 10.99.99.0 0.0.0.255
+ permit ip any any
+ exit
+
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ permit udp host 10.99.99.102 any eq snmp
+ permit icmp host 10.99.99.102 any
+ deny   ip any any
+ exit
+
+! --- Layer 3 SVIs (Default Gateways) ---
+interface Vlan10
+ description ## DEIE GATEWAY ##
+ ip address 10.10.10.1 255.255.255.0
+ ip access-group ACL_DEIE_IN in
+ no shutdown
+ exit
+
+interface Vlan20
+ description ## DCEE GATEWAY ##
+ ip address 10.10.20.1 255.255.255.0
+ ip access-group ACL_DCEE_IN in
+ no shutdown
+ exit
+
+interface Vlan30
+ description ## DMME GATEWAY ##
+ ip address 10.10.30.1 255.255.255.0
+ ip access-group ACL_DMME_IN in
+ no shutdown
+ exit
+
+interface Vlan40
+ description ## DIS GATEWAY ##
+ ip address 10.10.40.1 255.255.255.0
+ no shutdown
+ exit
+
+interface Vlan99
+ description ## MGMT GATEWAY ##
+ ip address 10.99.99.1 255.255.255.0
+ ip access-group ACL_MGMT_IN in
+ no shutdown
+ exit
+
+! --- Downlink Trunks ---
+interface GigabitEthernet0/1
+ description ## TO SW-D-DEIE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet0/2
+ description ## TO SW-D-DCEE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 20,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet0/3
+ description ## TO SW-D-DMME ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 30,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet1/0
+ description ## TO SW-A-DIS ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 40,99,100
+ no shutdown
+ exit
+
+! --- Layer 3 Uplink to R-CORE ---
+interface GigabitEthernet0/0
+ description ## TO R-CORE ##
+ no switchport
+ ip address 10.255.255.1 255.255.255.252
+ negotiation auto
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+ no shutdown
+ exit
+
+! --- OSPF Dynamic Routing ---
+router ospf 1
+ router-id 1.1.1.1
+ network 10.10.10.0 0.0.0.255 area 0
+ network 10.10.20.0 0.0.0.255 area 0
+ network 10.10.30.0 0.0.0.255 area 0
+ network 10.10.40.0 0.0.0.255 area 0
+ network 10.99.99.0 0.0.0.255 area 0
+ network 10.255.255.0 0.0.0.3 area 0
+ exit
+
+! --- Apply SSH ACL to VTY ---
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP Monitoring ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+
+Distribution Layer Switching Configurations
+==========================
+SW-D-DEIE (Distribution Switch)
+==========================
+enable
+configure terminal
+hostname SW-D-DEIE
+
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- STP Optimization (Root for VLAN 10) ---
+spanning-tree mode pvst
+spanning-tree extend system-id
+spanning-tree vlan 10,99-100 priority 4096
+
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-CORE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet0/1
+ description ## TO SW-A-DEIE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,99,100
+ no shutdown
+ exit
+
+! --- Management Network ---
+interface Vlan99
+ description MANAGEMENT-PLANE
+ ip address 10.99.99.2 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 10.99.99.1
+
+! --- SSH ACL & VTY ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+ exit
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+
+==========================
+SW-D-DCEE (Distribution Switch)
+==========================
+enable
+configure terminal
+hostname SW-D-DCEE
+
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- STP Optimization (Root for VLAN 20) ---
+spanning-tree mode pvst
+spanning-tree extend system-id
+spanning-tree vlan 20,99-100 priority 8192
+
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-CORE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 20,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet0/1
+ description ## TO SW-A-DCEE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 20,99,100
+ no shutdown
+ exit
+
+! --- Management Network ---
+interface Vlan99
+ description MANAGEMENT-PLANE
+ ip address 10.99.99.3 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 10.99.99.1
+
+! --- SSH ACL & VTY ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+ exit
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+
+==========================
+SW-D-DMME (Distribution Switch)
+==========================
+enable
+configure terminal
+hostname SW-D-DMME
+
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- STP Optimization (Root for VLAN 30) ---
+spanning-tree mode pvst
+spanning-tree extend system-id
+spanning-tree vlan 30,99-100 priority 8192
+
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-CORE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 30,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet0/1
+ description ## TO SW-A-DMME ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 30,99,100
+ no shutdown
+ exit
+
+! --- Management Network ---
+interface Vlan99
+ description MANAGEMENT-PLANE
+ ip address 10.99.99.4 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 10.99.99.1
+
+! --- SSH ACL & VTY ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+ exit
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+Access Layer Switching Configurations
+==========================
+SW-A-DEIE
+==========================
+enable
+configure terminal
+hostname SW-A-DEIE
+
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+spanning-tree mode pvst
+spanning-tree extend system-id
+
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-D-DEIE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,99,100
+ no shutdown
+ exit
+
+interface range GigabitEthernet0/1 - 2
+ description ## TO DEIE VPCS ##
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Management Network ---
+interface Vlan99
+ ip address 10.99.99.10 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 10.99.99.1
+
+! --- SSH ACL & VTY ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+ exit
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+
+==========================
+SW-A-DCEE
+==========================
+enable
+configure terminal
+hostname SW-A-DCEE
+
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+spanning-tree mode pvst
+spanning-tree extend system-id
+
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-D-DCEE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 20,99,100
+ no shutdown
+ exit
+
+interface range GigabitEthernet0/1 - 2
+ description ## TO DCEE VPCS ##
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Management Network ---
+interface Vlan99
+ ip address 10.99.99.20 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 10.99.99.1
+
+! --- SSH ACL & VTY ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+ exit
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+==========================
+SW-A-DMME
+==========================
+enable
+configure terminal
+hostname SW-A-DMME
+
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+spanning-tree mode pvst
+spanning-tree extend system-id
+
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-D-DMME ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 30,99,100
+ no shutdown
+ exit
+
+interface range GigabitEthernet0/1 - 2
+ description ## TO DMME VPCS ##
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Management Network ---
+interface Vlan99
+ ip address 10.99.99.30 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 10.99.99.1
+
+! --- SSH ACL & VTY ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+ exit
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+
+==========================
+SW-A-DIS
+==========================
+enable
+configure terminal
+hostname SW-A-DIS
+
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+spanning-tree mode pvst
+spanning-tree extend system-id
+
+vlan 10
+ name VLAN_DEIE
+vlan 20
+ name VLAN_DCEE
+vlan 30
+ name VLAN_DMME
+vlan 40
+ name VLAN_DIS
+vlan 99
+ name MGMT
+vlan 100
+ name NATIVE
+exit
+
+interface GigabitEthernet0/0
+ description ## TO SW-CORE ##
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 40,99,100
+ no shutdown
+ exit
+
+interface GigabitEthernet0/1
+ description ## AUTOMATION SERVER ##
+ switchport mode access
+ switchport access vlan 99
+ spanning-tree portfast edge
+ no shutdown
+ exit
+
+interface range GigabitEthernet0/2 - 3, GigabitEthernet1/0 - 1
+ description ## SERVER FARM VPCS ##
+ switchport mode access
+ switchport access vlan 40
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Management Network ---
+interface Vlan99
+ ip address 10.99.99.40 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 10.99.99.1
+
+! --- SSH ACL & VTY ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ deny   ip any any
+ exit
+line vty 0 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+
+
+Core & Edge Routing Chain Configurations
+==========================
+R-CORE (Core Router)
+==========================
+enable
+configure terminal
+hostname R-CORE
+
+no ip domain-lookup
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- SSH ACL ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ permit udp host 10.99.99.102 any eq snmp
+ permit icmp host 10.99.99.102 any
+ deny   ip any any
+ exit
+line vty 0 4
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+interface GigabitEthernet2/0
+ description LINK-TO-SW-CORE
+ ip address 10.255.255.2 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+ no shutdown
+ exit
+
+interface GigabitEthernet1/0
+ description LINK-TO-R-EDGE
+ ip address 10.255.255.5 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+ no shutdown
+ exit
+
+router ospf 1
+ router-id 2.2.2.2
+ network 10.255.255.0 0.0.0.3 area 0
+ network 10.255.255.4 0.0.0.3 area 0
+ network 10.99.99.50 0.0.0.0 area 0
+ exit
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory
+
+
+==========================
+R-EDGE (WAN / Edge Router)
+==========================
+enable
+configure terminal
+hostname R-EDGE
+
+no ip domain-lookup
+ip domain-name uor.local
+username admin privilege 15 secret admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- SSH ACL ---
+ip access-list extended ACL_MGMT_SSH
+ permit tcp 10.99.99.0 0.0.0.255 any eq 22
+ permit udp host 10.99.99.102 any eq snmp
+ permit icmp host 10.99.99.102 any
+ deny   ip any any
+ exit
+line vty 0 4
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
+
+! --- Transit Link to R-CORE ---
+interface GigabitEthernet2/0
+ description LINK-TO-R-CORE
+ ip address 10.255.255.6 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+ ip nat inside
+ ip virtual-reassembly in
+ no shutdown
+ exit
+
+! --- Internet / WAN Interface (Dynamically Adapts to VMware) ---
+interface GigabitEthernet1/0
+ description LINK-TO-GNS3-VM-NAT
+ ip dhcp client request router
+ ip address dhcp
+ ip nat outside
+ ip virtual-reassembly in
+ no shutdown
+ exit
+
+! --- OSPF Default Route Injection ---
+router ospf 1
+ router-id 3.3.3.3
+ network 10.255.255.4 0.0.0.3 area 0
+ network 10.99.99.51 0.0.0.0 area 0
+ default-information originate always
+ exit
+
+! --- NAT Egress Control (Permit DEIE & DCEE Only) ---
+ip access-list standard NAT_ALLOWED
+ permit 10.10.10.0 0.0.0.255
+ permit 10.10.20.0 0.0.0.255
+ exit
+
+! --- Apply PAT (Overload) to WAN Interface ---
+ip nat inside source list NAT_ALLOWED interface GigabitEthernet1/0 overload
+
+! --- SNMP ---
+snmp-server community UOR_SNMP RO
+snmp-server enable traps
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
+
+end
+write memory

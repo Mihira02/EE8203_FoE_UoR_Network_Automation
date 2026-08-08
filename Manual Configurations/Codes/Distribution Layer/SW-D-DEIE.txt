@@ -3,7 +3,7 @@ configure terminal
 hostname SW-D-DEIE
 
 ip domain-name uor.local
-username admin privilege 15 secret cisco123
+username admin privilege 15 secret admin123
 
 vlan 10,20,30,40,99,100
 exit
@@ -31,8 +31,6 @@ ip default-gateway 10.99.99.1
 ! --- SSH & Security ---
 crypto key generate rsa modulus 2048
 ip ssh version 2
-ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
-ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
 
 ip access-list extended ACL_MGMT_SSH
  permit tcp 10.99.99.0 0.0.0.255 any eq 22
@@ -44,10 +42,15 @@ line vty 0 4
  login local
  transport input ssh
  exit
+line vty 5 15
+ access-class ACL_MGMT_SSH in
+ login local
+ transport input ssh
+ exit
 
 snmp-server community UOR_SNMP RO
 snmp-server enable traps
-snmp-server host 10.99.99.102 version 2c UOR_SNMP 
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
 
 end
 write memory

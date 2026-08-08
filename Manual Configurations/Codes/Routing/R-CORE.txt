@@ -4,14 +4,11 @@ hostname R-CORE
 
 no ip domain-lookup
 ip domain-name uor.local
-
-username admin privilege 15 secret cisco123
+username admin privilege 15 secret admin123
 
 ! --- SSH & Management Security ---
 crypto key generate rsa modulus 2048
 ip ssh version 2
-ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
-ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
 
 ip access-list extended ACL_MGMT_SSH
  permit tcp 10.99.99.0 0.0.0.255 any eq 22
@@ -27,14 +24,6 @@ line vty 0 4
  exit
 
 ! --- Interfaces ---
-interface GigabitEthernet1/0
- description LINK-TO-R-EDGE
- ip address 10.255.255.5 255.255.255.252
- ip ospf network point-to-point
- ip ospf 1 area 0
- no shutdown
- exit
-
 interface GigabitEthernet2/0
  description LINK-TO-SW-CORE
  ip address 10.255.255.2 255.255.255.252
@@ -43,17 +32,26 @@ interface GigabitEthernet2/0
  no shutdown
  exit
 
-! --- Routing ---
+interface GigabitEthernet1/0
+ description LINK-TO-R-EDGE
+ ip address 10.255.255.5 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+ no shutdown
+ exit
+
+! --- OSPF Dynamic Routing ---
 router ospf 1
  router-id 2.2.2.2
  network 10.255.255.0 0.0.0.3 area 0
  network 10.255.255.4 0.0.0.3 area 0
+ network 10.99.99.50 0.0.0.0 area 0
  exit
 
-! --- SNMP ---
+! --- SNMP Monitoring ---
 snmp-server community UOR_SNMP RO
 snmp-server enable traps
-snmp-server host 10.99.99.102 version 2c UOR_SNMP 
+snmp-server host 10.99.99.102 version 2c UOR_SNMP
 
 end
 write memory
